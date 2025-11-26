@@ -1,27 +1,69 @@
+/* Container for the account list */
 .container {
   padding: 2rem;
+  background: #f9f9f9;
+  min-height: 100vh;
 }
 
+/* Grid layout for account cards */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
   margin-top: 2rem;
 }
 
+/* Individual account card */
 .card {
-  background: white;
+  background: #fff;
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Account name */
 .card h3 {
   margin: 0 0 1rem;
+  font-size: 1.2rem;
   color: #333;
 }
 
+/* Account details */
 .card p {
-  margin: 0.5rem 0;
-  color: #666;
+  margin: 0.3rem 0;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+/* View Transactions button */
+.card button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  background-color: #0070f3;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.card button:hover {
+  background-color: #005bb5;
+}
+
+/* Heading */
+h2 {
+  font-size: 1.8rem;
+  color: #222;
+  margin-bottom: 1rem;
 }

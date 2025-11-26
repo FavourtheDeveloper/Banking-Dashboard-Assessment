@@ -24,60 +24,23 @@
 
 import express from "express";
 import cors from "cors";
-import sqlite3 from "sqlite3";
-import { Database } from "sqlite3";
+import { db } from "./db";
+import accountRoutes from "./routes/account.routes";
+import transactionRoutes from "./routes/transaction.routes";
 
 const app = express();
 const PORT = 3001;
 
-// Basic middleware setup - Consider additional security middleware
 app.use(cors());
 app.use(express.json());
 
-// Database setup - Currently using in-memory SQLite for simplicity
-// Consider: Production database, connection pooling, error handling
-const db: Database = new sqlite3.Database(":memory:", (err) => {
-  if (err) {
-    console.error("Error opening database:", err);
-  } else {
-    console.log("Connected to in-memory SQLite database");
-    initializeDatabase();
-  }
-});
-
-// Basic database initialization
-// Consider: Migration system, seed data management, error handling
-function initializeDatabase() {
-  const createTableQuery = `
-    CREATE TABLE IF NOT EXISTS accounts (
-      id TEXT PRIMARY KEY,
-      accountNumber TEXT UNIQUE,
-      accountType TEXT CHECK(accountType IN ('CHECKING', 'SAVINGS')),
-      balance REAL,
-      accountHolder TEXT,
-      createdAt TEXT
-    )
-  `;
-
-  db.run(createTableQuery, (err) => {
-    if (err) {
-      console.error("Error creating table:", err);
-    } else {
-      console.log("Accounts table created");
-      insertSampleData();
-    }
-  });
-}
-
-// Sample data insertion
-// Consider: Data validation, error handling, transaction management
-function insertSampleData() {
+function seedAccounts() {
   const sampleAccounts = [
     {
       id: "1",
       accountNumber: "1001",
       accountType: "CHECKING",
-      balance: 5000.0,
+      balance: 5000,
       accountHolder: "John Doe",
       createdAt: new Date().toISOString(),
     },
@@ -85,20 +48,18 @@ function insertSampleData() {
       id: "2",
       accountNumber: "1002",
       accountType: "SAVINGS",
-      balance: 10000.0,
+      balance: 10000,
       accountHolder: "Jane Smith",
       createdAt: new Date().toISOString(),
     },
   ];
 
-  const insertQuery = `
-    INSERT OR REPLACE INTO accounts (id, accountNumber, accountType, balance, accountHolder, createdAt)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `;
-
   sampleAccounts.forEach((account) => {
     db.run(
-      insertQuery,
+      `
+      INSERT OR REPLACE INTO accounts (id, accountNumber, accountType, balance, accountHolder, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `,
       [
         account.id,
         account.accountNumber,
@@ -108,42 +69,46 @@ function insertSampleData() {
         account.createdAt,
       ],
       (err) => {
-        if (err) {
-          console.error("Error inserting sample data:", err);
-        }
+        if (err) console.error("Error inserting account:", err.message);
       }
     );
   });
 }
 
-// Basic API routes
-// Consider: Input validation, authentication, rate limiting, response formatting
-app.get("/api/accounts", (req, res) => {
-  db.all("SELECT * FROM accounts", (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json(rows);
-  });
-});
 
-app.get("/api/accounts/:id", (req, res) => {
-  db.get("SELECT * FROM accounts WHERE id = ?", [req.params.id], (err, row) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    if (!row) {
-      res.status(404).json({ error: "Account not found" });
-      return;
-    }
-    res.json(row);
+// Initialize tables
+function init() {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS accounts (
+      id TEXT PRIMARY KEY,
+      accountNumber TEXT,
+      accountType TEXT,
+      balance REAL,
+      accountHolder TEXT,
+      createdAt TEXT
+    )
+  `, () => {
+    seedAccounts(); // <-- seed after table creation
   });
-});
 
-// Server startup
-// Consider: Graceful shutdown, environment configuration, clustering
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+  db.run(`
+    CREATE TABLE IF NOT EXISTS transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      accountId TEXT,
+      type TEXT,
+      amount REAL,
+      description TEXT,
+      createdAt TEXT
+    )
+  `);
+}
+
+init();
+
+// Routes
+app.use("/api/accounts", accountRoutes);
+app.use("/api/accounts", transactionRoutes);
+
+app.listen(PORT, () =>
+  console.log(`Server running on http://localhost:${PORT}`)
+);
