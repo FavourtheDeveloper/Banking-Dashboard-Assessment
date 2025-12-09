@@ -1,71 +1,64 @@
 import { Request, Response } from "express";
-import { db } from "../db";
+import { TransactionService } from "../services/transaction.service";
+import { asyncHandler } from "../middleware/errorHandler";
+import { TransactionFilters, TransactionType } from "../types";
 
-interface Account {
-  id: string;
-  accountNumber: string;
-  accountType: "CHECKING" | "SAVINGS";
-  balance: number;
-  accountHolder: string;
-  createdAt: string;
-}
+/**
+ * Get transactions for an account
+ * GET /api/accounts/:id/transactions
+ */
+export const getTransactions = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const {
+    page = "1",
+    limit = "10",
+    type,
+    startDate,
+    endDate,
+    minAmount,
+    maxAmount,
+  } = req.query;
 
+  const filters: TransactionFilters = {};
+  if (type) filters.type = type as TransactionType;
+  if (startDate) filters.startDate = startDate as string;
+  if (endDate) filters.endDate = endDate as string;
+  if (minAmount) filters.minAmount = Number(minAmount);
+  if (maxAmount) filters.maxAmount = Number(maxAmount);
 
-export const createTransaction = (req: Request, res: Response): void => {
-  const accountId = req.params.id;
+  const result = await TransactionService.getByAccountId(
+    id,
+    parseInt(page as string),
+    parseInt(limit as string),
+    Object.keys(filters).length > 0 ? filters : undefined
+  );
+
+  res.json(result);
+});
+
+/**
+ * Create a new transaction
+ * POST /api/accounts/:id/transactions
+ */
+export const createTransaction = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
   const { type, amount, description } = req.body;
 
-  if (!type || !amount || amount <= 0) {
-    res.status(400).json({ error: "Invalid transaction payload" });
-    return;
-  }
-
-  db.get<Account>("SELECT * FROM accounts WHERE id = ?", [accountId], (err, account) => {
-    if (err) { res.status(500).json({ error: err.message }); return; }
-    if (!account) { res.status(404).json({ error: "Account not found" }); return; }
-
-    let newBalance = account.balance;
-
-    if (type === "DEPOSIT") newBalance += amount;
-    else if (type === "WITHDRAWAL") {
-      if (amount > account.balance) { res.status(400).json({ error: "Insufficient balance" }); return; }
-      newBalance -= amount;
-    }
-
-    db.run("UPDATE accounts SET balance = ? WHERE id = ?", [newBalance, accountId], (err2) => {
-      if (err2) { res.status(500).json({ error: err2.message }); return; }
-
-      const createdAt = new Date().toISOString();
-
-      db.run(
-        "INSERT INTO transactions (accountId, type, amount, description, createdAt) VALUES (?, ?, ?, ?, ?)",
-        [accountId, type, amount, description || "", createdAt],
-        function (err3) {
-          if (err3) { res.status(500).json({ error: err3.message }); return; }
-
-          res.json({
-            message: "Transaction created",
-            balance: newBalance,
-            transaction: { id: this.lastID, accountId, type, amount, description, createdAt },
-          });
-        }
-      );
-    });
+  const result = await TransactionService.create(id, {
+    type,
+    amount,
+    description,
   });
-};
 
-export const getTransactions = (req: Request, res: Response): void => {
+  res.status(201).json(result);
+});
+
+/**
+ * Get transaction summary for an account
+ * GET /api/accounts/:id/transactions/summary
+ */
+export const getTransactionSummary = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const page = parseInt((req.query.page as string) || "1");
-  const limit = parseInt((req.query.limit as string) || "10");
-  const offset = (page - 1) * limit;
-
-  db.all(
-    `SELECT * FROM transactions WHERE accountId = ? ORDER BY createdAt DESC LIMIT ? OFFSET ?`,
-    [id, limit, offset],
-    (err, rows) => {
-      if (err) { res.status(500).json({ error: err.message }); return; }
-      res.json({ page, limit, results: rows });
-    }
-  );
-};
+  const summary = await TransactionService.getSummary(id);
+  res.json(summary);
+});

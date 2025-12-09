@@ -1,19 +1,44 @@
 import { Request, Response } from "express";
-import { db } from "../db";
+import { AccountService } from "../services/account.service";
+import { asyncHandler } from "../middleware/errorHandler";
 
-export const getAccounts = (req: Request, res: Response) => {
-  db.all("SELECT * FROM accounts", (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
-};
+/**
+ * Get all accounts
+ * GET /api/accounts
+ */
+export const getAccounts = asyncHandler(async (req: Request, res: Response) => {
+  const accounts = await AccountService.getAll();
+  res.json(accounts);
+});
 
-export const getAccountById = (req: Request, res: Response) => {
+/**
+ * Get account by ID
+ * GET /api/accounts/:id
+ */
+export const getAccountById = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  const account = await AccountService.getById(id);
+  res.json(account);
+});
 
-  db.get("SELECT * FROM accounts WHERE id = ?", [id], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(404).json({ error: "Account not found" });
-    res.json(row);
+/**
+ * Create a new account
+ * POST /api/accounts
+ */
+export const createAccount = asyncHandler(async (req: Request, res: Response) => {
+  const account = await AccountService.create(req.body);
+  res.status(201).json({
+    message: "Account created successfully",
+    account,
   });
-};
+});
+
+/**
+ * Delete an account
+ * DELETE /api/accounts/:id
+ */
+export const deleteAccount = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  await AccountService.delete(id);
+  res.json({ message: "Account deleted successfully" });
+});

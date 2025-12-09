@@ -1,60 +1,107 @@
-import { Account } from "./types";
+import {
+  Account,
+  Transaction,
+  TransactionType,
+  TransactionFilters,
+  PaginatedResponse,
+  TransactionResult,
+  TransactionSummary,
+  ApiError,
+} from "./types";
 
 const API_URL = "http://localhost:3001/api";
 
-export const getAccounts = async (): Promise<Account[]> => {
-  const response = await fetch(`${API_URL}/accounts`);
+// ============================================
+// Error Handling
+// ============================================
+
+async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    throw new Error("Failed to fetch accounts");
+    const error: ApiError = await response.json().catch(() => ({
+      error: "An unexpected error occurred",
+    }));
+    throw new Error(error.details?.join(", ") || error.error);
   }
   return response.json();
-};
-
-export const getAccount = async (id: string): Promise<Account> => {
-  const response = await fetch(`${API_URL}/accounts/${id}`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch account");
-  }
-  return response.json();
-};
-
-// --- TRANSACTIONS ---
-
-export interface Transaction {
-  id: number;
-  accountId: string;
-  type: "DEPOSIT" | "WITHDRAWAL" | "TRANSFER";
-  amount: number;
-  description: string;
-  createdAt: string;
 }
 
-// Fetch transactions for an account
-export const getTransactions = async (
-  accountId: string,
-  page = 1,
-  limit = 5
-): Promise<{ page: number; limit: number; results: Transaction[] }> => {
-  const response = await fetch(`${API_URL}/accounts/${accountId}/transactions?page=${page}&limit=${limit}`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch transactions");
-  }
-  return response.json();
-};
+// ============================================
+// Account API
+// ============================================
 
-// Create a new transaction
-export const createTransaction = async (
+export async function getAccounts(): Promise<Account[]> {
+  const response = await fetch(`${API_URL}/accounts`);
+  return handleResponse<Account[]>(response);
+}
+
+export async function getAccount(id: string): Promise<Account> {
+  const response = await fetch(`${API_URL}/accounts/${id}`);
+  return handleResponse<Account>(response);
+}
+
+// ============================================
+// Transaction API
+// ============================================
+
+export async function getTransactions(
   accountId: string,
-  data: { type: "DEPOSIT" | "WITHDRAWAL" | "TRANSFER"; amount: number; description: string }
-): Promise<{ message: string; balance: number; transaction: Transaction }> => {
+  page: number = 1,
+  limit: number = 10,
+  filters?: TransactionFilters
+): Promise<PaginatedResponse<Transaction>> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+
+  if (filters) {
+    if (filters.type) params.append("type", filters.type);
+    if (filters.startDate) params.append("startDate", filters.startDate);
+    if (filters.endDate) params.append("endDate", filters.endDate);
+    if (filters.minAmount) params.append("minAmount", filters.minAmount);
+    if (filters.maxAmount) params.append("maxAmount", filters.maxAmount);
+  }
+
+  const response = await fetch(
+    `${API_URL}/accounts/${accountId}/transactions?${params}`
+  );
+  return handleResponse<PaginatedResponse<Transaction>>(response);
+}
+
+export async function createTransaction(
+  accountId: string,
+  data: {
+    type: TransactionType;
+    amount: number;
+    description?: string;
+  }
+): Promise<TransactionResult> {
   const response = await fetch(`${API_URL}/accounts/${accountId}/transactions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to create transaction");
+  return handleResponse<TransactionResult>(response);
+}
+
+export async function getTransactionSummary(
+  accountId: string
+): Promise<TransactionSummary> {
+  const response = await fetch(
+    `${API_URL}/accounts/${accountId}/transactions/summary`
+  );
+  return handleResponse<TransactionSummary>(response);
+}
+
+// ============================================
+// Health Check
+// ============================================
+
+export async function checkHealth(): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_URL}/health`);
+    return response.ok;
+  } catch {
+    return false;
   }
-  return response.json();
-};
+}

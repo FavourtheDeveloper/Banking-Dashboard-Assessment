@@ -1,53 +1,108 @@
-import { useState, useEffect } from "react";
 import { Account } from "../types";
-import { getAccounts } from "../api";
-import { AccountCard } from "./AccountCard";
-import { TransactionList } from "./TransactionList"; // we'll create this next
 import styles from "./AccountList.module.css";
 
-export function AccountList() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+interface AccountListProps {
+  accounts: Account[];
+  onViewTransactions: (account: Account) => void;
+}
 
-  useEffect(() => {
-    const fetchAccounts = async () => {
-      try {
-        const data = await getAccounts();
-        setAccounts(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAccounts();
-  }, []);
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+export function AccountList({ accounts, onViewTransactions }: AccountListProps) {
+  if (accounts.length === 0) {
+    return (
+      <div className={styles.empty}>
+        <div className={styles.emptyIcon}>🏦</div>
+        <p className={styles.emptyText}>No accounts found</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
-      <h2>Accounts</h2>
+      <div className={styles.header}>
+        <h2 className={styles.title}>
+          Your Accounts
+          <span className={styles.count}>({accounts.length})</span>
+        </h2>
+      </div>
+
       <div className={styles.grid}>
-        {accounts.map((account) => (
+        {accounts.map((account, index) => (
           <AccountCard
             key={account.id}
             account={account}
-            onViewTransactions={setSelectedAccountId}
+            index={index}
+            onViewTransactions={onViewTransactions}
           />
         ))}
       </div>
+    </div>
+  );
+}
 
-      {selectedAccountId && (
-        <TransactionList
-          accountId={selectedAccountId}
-          onClose={() => setSelectedAccountId(null)}
-        />
-      )}
+interface AccountCardProps {
+  account: Account;
+  index: number;
+  onViewTransactions: (account: Account) => void;
+}
+
+function AccountCard({ account, index, onViewTransactions }: AccountCardProps) {
+  const initials = account.accountHolder
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
+
+  const formattedBalance = account.balance.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  const [dollars, cents] = formattedBalance.split(".");
+
+  const createdDate = new Date(account.createdAt).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const isSavings = account.accountType === "SAVINGS";
+
+  return (
+    <div
+      className={`${styles.card} ${isSavings ? styles["card--savings"] : ""}`}
+      style={{ animationDelay: `${index * 0.1}s` }}
+    >
+      <div className={styles.cardHeader}>
+        <div className={styles.cardAvatar}>{initials}</div>
+        <span
+          className={`${styles.cardBadge} ${
+            isSavings ? styles["cardBadge--savings"] : styles["cardBadge--checking"]
+          }`}
+        >
+          {account.accountType}
+        </span>
+      </div>
+
+      <h3 className={styles.cardName}>{account.accountHolder}</h3>
+      <p className={styles.cardNumber}>{account.accountNumber}</p>
+
+      <div className={styles.balanceSection}>
+        <p className={styles.balanceLabel}>Available Balance</p>
+        <p className={styles.balanceValue}>
+          ${dollars}
+          <span>.{cents}</span>
+        </p>
+      </div>
+
+      <div className={styles.cardFooter}>
+        <span className={styles.cardDate}>Opened {createdDate}</span>
+        <button
+          className={styles.cardButton}
+          onClick={() => onViewTransactions(account)}
+        >
+          Transactions →
+        </button>
+      </div>
     </div>
   );
 }

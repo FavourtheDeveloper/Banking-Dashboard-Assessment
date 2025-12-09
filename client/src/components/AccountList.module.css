@@ -1,69 +1,221 @@
-/* Container for the account list */
+/* ============================================
+   Account List Styles
+   ============================================ */
+
 .container {
-  padding: 2rem;
-  background: #f9f9f9;
-  min-height: 100vh;
+  animation: fadeIn 0.3s ease-out;
 }
 
-/* Grid layout for account cards */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-gray-900);
+}
+
+.count {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  font-weight: 400;
+  margin-left: var(--space-2);
+}
+
+/* ============================================
+   Grid Layout
+   ============================================ */
+
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: var(--space-6);
 }
 
-/* Individual account card */
+/* ============================================
+   Account Card
+   ============================================ */
+
 .card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: transform 0.2s, box-shadow 0.2s;
+  background: var(--color-white);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.4s ease-out backwards;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-light) 100%);
 }
 
 .card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-xl);
 }
 
-/* Account name */
-.card h3 {
-  margin: 0 0 1rem;
-  font-size: 1.2rem;
-  color: #333;
+.card--savings::before {
+  background: linear-gradient(90deg, var(--color-success) 0%, #34d399 100%);
 }
 
-/* Account details */
-.card p {
-  margin: 0.3rem 0;
-  color: #555;
-  font-size: 0.95rem;
+/* Card Header */
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--space-5);
 }
 
-/* View Transactions button */
-.card button {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  border: none;
-  background-color: #0070f3;
-  color: white;
+.cardAvatar {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, var(--color-gray-100) 0%, var(--color-gray-200) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-gray-600);
+}
+
+.cardBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cardBadge--checking {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.cardBadge--savings {
+  background: #d1fae5;
+  color: #047857;
+}
+
+/* Card Body */
+.cardName {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-1);
+}
+
+.cardNumber {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  font-family: var(--font-mono);
+  margin-bottom: var(--space-5);
+}
+
+/* Balance Section */
+.balanceSection {
+  background: linear-gradient(135deg, var(--color-gray-50) 0%, var(--color-gray-100) 100%);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.balanceLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-1);
+}
+
+.balanceValue {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--color-gray-900);
+  font-family: var(--font-mono);
+  letter-spacing: -0.025em;
+}
+
+.balanceValue span {
+  font-size: var(--font-size-xl);
+  color: var(--color-gray-400);
+}
+
+/* Card Footer */
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardDate {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-400);
+}
+
+.cardButton {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+  color: var(--color-white);
+  padding: var(--space-3) var(--space-5);
   font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
 }
 
-.card button:hover {
-  background-color: #005bb5;
+.cardButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
 }
 
-/* Heading */
-h2 {
-  font-size: 1.8rem;
-  color: #222;
-  margin-bottom: 1rem;
+.cardButton:active {
+  transform: translateY(0);
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+
+.empty {
+  text-align: center;
+  padding: var(--space-16);
+  color: var(--color-gray-500);
+}
+
+.emptyIcon {
+  font-size: 4rem;
+  margin-bottom: var(--space-4);
+  opacity: 0.5;
+}
+
+.emptyText {
+  font-size: var(--font-size-lg);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: var(--space-5);
+  }
 }
